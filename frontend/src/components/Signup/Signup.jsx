@@ -15,28 +15,38 @@ const Singup = () => {
   const [avatar, setAvatar] = useState(null);
 
   const handleFileInputChange = (e) => {
-    const reader = new FileReader();
+  //   const reader = new FileReader();
 
-    reader.onload = () => {
-      if (reader.readyState === 2) {
-        setAvatar(reader.result);
-      }
-    };
+  //    reader.onload = () => {
+  //   setAvatar(reader.result);
+  // };
 
-    reader.readAsDataURL(e.target.files[0]);
+  //   reader.readAsDataURL(e.target.files[0]);
+  const file = e.target.files[0]; // Get the file object
+  setAvatar(file); // Store the file, not Base64
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    const formData = new FormData();
+    formData.append("name", name);
+    formData.append("email", email);
+    formData.append("password", password);
+    if (avatar) {
+      formData.append("avatar", avatar);
+    }
     axios
-      .post(`${server}/user/create-user`, { name, email, password, avatar })
+      .post(`${server}/user/create-user`,  formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        }})
       .then((res) => {
         toast.success(res.data.message);
         setName("");
         setEmail("");
         setPassword("");
-        setAvatar();
+        setAvatar(null);
       })
       .catch((error) => {
         toast.error(error.response.data.message);
