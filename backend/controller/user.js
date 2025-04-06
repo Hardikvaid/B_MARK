@@ -8,37 +8,64 @@ const jwt = require("jsonwebtoken");
 const sendMail = require("../utils/sendMail");
 const sendToken = require("../utils/jwtToken");
 const { isAuthenticated, isAdmin } = require("../middleware/auth");
+const upload=require("../middleware/multer");
 
 // create user
-router.post("/create-user", async (req, res, next) => {
+router.post("/create-user", upload.single("avatar"), async (req, res, next) => {
   try {
+   
     const { name, email, password, avatar } = req.body;
     console.log(name, email, password,avatar);
     const userEmail = await User.findOne({ email });
-
+    // const avatarpath=Date.now()-req.file.originalname;
+     const avatarpath=req.file.filename;
+    console.log(avatarpath);
     if (userEmail) {
       return next(new ErrorHandler("User already exists", 400));
     }
 
-    const myCloud = await cloudinary.v2.uploader.upload(avatar, {
-      folder: "avatars",
-    });
-
-    const user = {
+    // const myCloud = await cloudinary.v2.uploader.upload(avatar, {
+    //   folder: "avatars",
+    // });
+    const user =new User({
       name: name,
       email: email,
       password: password,
-      avatar: {
-        public_id: myCloud.public_id,
-        url: myCloud.secure_url,
-      },
-    };
+      avatar:{
+        public_id: avatarpath,
+        url: avatarpath
+      }
+    });
 
+    const payload = {
+      name: user.name,
+      email: user.email,
+    }
+    await user.save()
     const password1 = password;
-    const activationToken = createActivationToken(user);
+    const activationToken = createActivationToken(payload);
 
     // const activationUrl = `https://bmarkecommerce.vercel.app/activation/${activationToken}`;
+    // const activationUrl = `https://bmarkecommerce.vercel.app/activation/${activationToken}`;
     // const activationUrl = `http://localhost:3000/activation/${activationToken}`;
+    res.status(201).json({
+      success: true,
+      message: "User created successfully!",
+      data: user
+  });
+    // try {
+    //   await sendMail({
+    //     email: user.email,
+    //     subject: "Activate your account",
+    //     message: `Hello ${user.name}, please click on the link to activate your account: ${activationUrl} and your password is : ${password1}`,
+    //   });
+    //   res.status(201).json({
+    //     success: true,
+    //     message: `please check your email:- ${user.email} to activate your account! and your password is : ${password1}`,
+    //   });
+    // } catch (error) {
+    //   return next(new ErrorHandler(error.message, 500));
+    // }
 
     // try {
     //   await sendMail({
@@ -60,6 +87,7 @@ router.post("/create-user", async (req, res, next) => {
 
 // create activation token
 const createActivationToken = (user) => {
+  return jwt.sign(user, "Frqa5001", {
   return jwt.sign(user,'Frqa5001@', {
     expiresIn: "5m",
   });
@@ -107,17 +135,14 @@ router.post(
   catchAsyncErrors(async (req, res, next) => {
     try {
       const { email, password } = req.body;
-
       if (!email || !password) {
         return next(new ErrorHandler("Please provide the all fields!", 400));
       }
 
       const user = await User.findOne({ email }).select("+password");
-
       if (!user) {
         return next(new ErrorHandler("User doesn't exists!", 400));
       }
-
       const isPasswordValid = await user.comparePassword(password);
 
       if (!isPasswordValid) {

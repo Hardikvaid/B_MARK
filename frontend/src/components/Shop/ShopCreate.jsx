@@ -29,7 +29,10 @@ const ShopCreate = () => {
         zipCode,
         address,
         phoneNumber,
-      })
+      }, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        }})
       .then((res) => {
         toast.success(res.data.message);
         setName("");
@@ -46,15 +49,15 @@ const ShopCreate = () => {
   };
 
   const handleFileInputChange = (e) => {
-    const reader = new FileReader();
+    //   const reader = new FileReader();
 
-    reader.onload = () => {
-      if (reader.readyState === 2) {
-        setAvatar(reader.result);
-      }
-    };
+  //    reader.onload = () => {
+  //   setAvatar(reader.result);
+  // };
 
-    reader.readAsDataURL(e.target.files[0]);
+  //   reader.readAsDataURL(e.target.files[0]);
+  const file = e.target.files[0]; // Get the file object
+  setAvatar(file); // Store the file, not Base64
   };
 
   return (

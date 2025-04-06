@@ -9,54 +9,60 @@ const cloudinary = require("cloudinary");
 const catchAsyncErrors = require("../middleware/catchAsyncErrors");
 const ErrorHandler = require("../utils/ErrorHandler");
 const sendShopToken = require("../utils/shopToken");
-
+const upload=require("../middleware/multer");
 // create shop
-router.post("/create-shop", catchAsyncErrors(async (req, res, next) => {
+router.post("/create-shop",upload.single("avatar"), catchAsyncErrors(async (req, res, next) => {
   try {
     const { email } = req.body;
     const sellerEmail = await Shop.findOne({ email });
     if (sellerEmail) {
       return next(new ErrorHandler("User already exists", 400));
     }
+    console.log(req.file);
+    // const myCloud = await cloudinary.v2.uploader.upload(req.body.avatar, {
+    //   folder: "avatars",
+    // });
+    const avatarpath=req.file.filename;
 
-    const myCloud = await cloudinary.v2.uploader.upload(req.body.avatar, {
-      folder: "avatars",
-    });
-
-
-    const seller = {
+    const seller =new Shop ({
       name: req.body.name,
       email: email,
       password: req.body.password,
       avatar: {
-        public_id: myCloud.public_id,
-        url: myCloud.secure_url,
+        public_id: avatarpath,
+        url: avatarpath,
       },
       address: req.body.address,
       phoneNumber: req.body.phoneNumber,
       zipCode: req.body.zipCode,
-    };
+    });
 
-    const activationToken = createActivationToken(seller);
+    await seller.save()
+    res.status(201).json({
+      success: true,
+      message: "seller created successfully!",
+      data: seller
+  });
+    // const activationToken = createActivationToken(seller);
 
-    const password = seller.password;
+    // const password = seller.password;
 
-    const activationUrl = `https://bmarkecommerce.vercel.app/seller/activation/${activationToken}`;
+    // const activationUrl = `https://bmarkecommerce.vercel.app/seller/activation/${activationToken}`;
     // const activationUrl = `http://localhost:3000/seller/activation/${activationToken}`;
 
-    try {
-      await sendMail({
-        email: seller.email,
-        subject: "Activate your Shop",
-        message: `Hello ${seller.name}, please click on the link to activate your shop: ${activationUrl} and your password is : ${password}`,
-      });
-      res.status(201).json({
-        success: true,
-        message: `please check your email:- ${seller.email} to activate your shop! and your password is : ${password}`,
-      });
-    } catch (error) {
-      return next(new ErrorHandler(error.message, 500));
-    }
+    // try {
+    //   await sendMail({
+    //     email: seller.email,
+    //     subject: "Activate your Shop",
+    //     message: `Hello ${seller.name}, please click on the link to activate your shop: ${activationUrl} and your password is : ${password}`,
+    //   });
+    //   res.status(201).json({
+    //     success: true,
+    //     message: `please check your email:- ${seller.email} to activate your shop! and your password is : ${password}`,
+    //   });
+    // } catch (error) {
+    //   return next(new ErrorHandler(error.message, 500));
+    // }
   } catch (error) {
     return next(new ErrorHandler(error.message, 400));
   }
@@ -122,7 +128,6 @@ router.post(
       }
 
       const user = await Shop.findOne({ email }).select("+password");
-
       if (!user) {
         return next(new ErrorHandler("User doesn't exists!", 400));
       }
@@ -135,7 +140,7 @@ router.post(
         );
       }
 
-      sendShopToken(user, 201, res);
+      sendShopToken(user, 201, res, req);
     } catch (error) {
       return next(new ErrorHandler(error.message, 500));
     }
@@ -153,7 +158,9 @@ router.get(
       if (!seller) {
         return next(new ErrorHandler("User doesn't exists", 400));
       }
-
+      const imageUrl = `${req.protocol}://${req.get('host')}/uploads/${seller.avatar.url}`;
+      seller.avatar.url=imageUrl;
+      console.log()
       res.status(200).json({
         success: true,
         seller,

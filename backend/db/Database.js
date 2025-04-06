@@ -6,6 +6,7 @@ const mongoose = require("mongoose");
 
 const connectDatabase = () => {
   mongoose
+    
     .connect("mongodb://127.0.0.1:27017/B_MARK1", {
       useNewUrlParser: true,
       useUnifiedTopology: true,
