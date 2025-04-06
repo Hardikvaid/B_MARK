@@ -13,6 +13,7 @@ const { isAuthenticated, isAdmin } = require("../middleware/auth");
 router.post("/create-user", async (req, res, next) => {
   try {
     const { name, email, password, avatar } = req.body;
+    console.log(name, email, password,avatar);
     const userEmail = await User.findOne({ email });
 
     if (userEmail) {
@@ -36,22 +37,22 @@ router.post("/create-user", async (req, res, next) => {
     const password1 = password;
     const activationToken = createActivationToken(user);
 
-    const activationUrl = `https://bmarkecommerce.vercel.app/activation/${activationToken}`;
+    // const activationUrl = `https://bmarkecommerce.vercel.app/activation/${activationToken}`;
     // const activationUrl = `http://localhost:3000/activation/${activationToken}`;
 
-    try {
-      await sendMail({
-        email: user.email,
-        subject: "Activate your account",
-        message: `Hello ${user.name}, please click on the link to activate your account: ${activationUrl} and your password is : ${password1}`,
-      });
-      res.status(201).json({
-        success: true,
-        message: `please check your email:- ${user.email} to activate your account! and your password is : ${password1}`,
-      });
-    } catch (error) {
-      return next(new ErrorHandler(error.message, 500));
-    }
+    // try {
+    //   await sendMail({
+    //     email: user.email,
+    //     subject: "Activate your account",
+    //     message: `Hello ${user.name}, please click on the link to activate your account: ${activationUrl} and your password is : ${password1}`,
+    //   });
+    //   res.status(201).json({
+    //     success: true,
+    //     message: `please check your email:- ${user.email} to activate your account! and your password is : ${password1}`,
+    //   });
+    // } catch (error) {
+    //   return next(new ErrorHandler(error.message, 500));
+    // }
   } catch (error) {
     return next(new ErrorHandler(error.message, 400));
   }
@@ -59,7 +60,7 @@ router.post("/create-user", async (req, res, next) => {
 
 // create activation token
 const createActivationToken = (user) => {
-  return jwt.sign(user, process.env.ACTIVATION_SECRET, {
+  return jwt.sign(user,'Frqa5001@', {
     expiresIn: "5m",
   });
 };
